@@ -63,7 +63,7 @@ Adicione `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` às variáveis do proved
 
 1. Faça deploy em HTTPS e copie a URL pública.
 2. Adicione um `WebViewer` à tela e defina `HomeUrl` para essa URL.
-3. Ative JavaScript e mantenha `FollowLinks` dentro do WebViewer.
+3. Ative JavaScript, mantenha `FollowLinks` dentro do WebViewer e solicite a permissão Android de localização antes de abrir o mapa (`ACCESS_FINE_LOCATION`/`ACCESS_COARSE_LOCATION`).
 4. Use o evento `WebViewStringChange` para ouvir:
    - `LOGIN_SUCCESS`
    - `OPEN_MEMORY:<id>`
@@ -79,6 +79,7 @@ A integração `window.AppInventor?.setWebViewString(...)` é opcional e protegi
 - Login, cadastro, logout e persistência de sessão.
 - Modo demonstração automático, com sessão, favoritos e novos registros no `localStorage`.
 - Mapa React Leaflet/OpenStreetMap, filtros, busca, marcadores por categoria e detalhe clicável.
+- Localização real em tempo contínuo no mapa, com ponto azul, precisão, recentralização e distâncias calculadas no dispositivo.
 - Pesquisa de histórias, destaque selecionável, criadores e cartões.
 - Detalhe com imagem resiliente, autor, categorias, favorito, texto e player visual.
 - Detalhe com mapa da localização, comunidade e acesso ao perfil da autoria.
@@ -92,7 +93,7 @@ A integração `window.AppInventor?.setWebViewString(...)` é opcional e protegi
 ## Simulado no MVP
 
 - A narração de áudio é visual; o botão anima o progresso, mas não toca arquivo.
-- Geolocalização pode marcar o ponto no formulário; ainda não recalcula distâncias da listagem.
+- A geolocalização depende da permissão do navegador/WebViewer e de HTTPS; quando negada, o mapa permanece disponível sem o ponto azul.
 - Distâncias, coordenadas, autores e narrativas dos mocks são demonstrativos.
 - “Privacidade e segurança”, “Preferências” e “Autoria das imagens” mostram feedback interno, sem telas próprias.
 - Imagens de demonstração usam URLs públicas; há fallback quando a rede ou a origem falha.
