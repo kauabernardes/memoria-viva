@@ -43,6 +43,7 @@ export function LoginPage() {
           <div className="input-with-icon"><Mail size={18} /><input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" /></div>
           <label htmlFor="login-password">Senha</label>
           <div className="input-with-icon"><LockKeyhole size={18} /><input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo de 6 caracteres" /></div>
+          {!isDemo && <Link className="forgot-password-link" to="/esqueci-senha">Esqueci minha senha</Link>}
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="primary-button" type="submit" disabled={submitting}>
             {submitting ? 'Entrando…' : 'Entrar'} <ArrowRight size={18} />

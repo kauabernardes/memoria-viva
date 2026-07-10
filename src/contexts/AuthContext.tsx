@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { AuthUser } from '../types'
 import { isSupabaseConfigured, supabase } from '../services/supabase'
+import { getAuthRedirectUrl } from '../services/authService'
 import { AuthContext, type AuthContextValue } from './auth-context'
 
 const DEMO_SESSION_KEY = 'memoria-viva:session'
@@ -60,7 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.auth.signUp({
         email: input.email,
         password: input.password,
-        options: { data: { username: input.username, description: input.description ?? '' } },
+        options: {
+          data: { username: input.username, description: input.description ?? '' },
+          emailRedirectTo: getAuthRedirectUrl('/login'),
+        },
       })
       if (error) return { error: error.message }
       if (!data.session) {

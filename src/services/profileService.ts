@@ -62,6 +62,39 @@ export async function updateProfile(id: string, input: ProfileUpdateInput): Prom
   return toProfile(data)
 }
 
+function fileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'))
+    reader.readAsDataURL(file)
+  })
+}
+
+export async function uploadProfileAvatar(userId: string, file: File) {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) throw new Error('Escolha uma imagem JPEG, PNG ou WebP.')
+  if (file.size > 2 * 1024 * 1024) throw new Error('A foto de perfil deve ter no máximo 2 MB.')
+
+  if (!isSupabaseConfigured || !supabase) return fileAsDataUrl(file)
+
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError || authData.user?.id !== userId) throw new Error('Sua sessão expirou. Entre novamente para alterar a foto.')
+
+  const path = `${userId}/avatar`
+  const { error } = await supabase.storage.from('avatars').upload(path, file, {
+    cacheControl: '3600',
+    contentType: file.type,
+    upsert: true,
+  })
+  if (error) {
+    if (error.message.toLocaleLowerCase().includes('bucket')) throw new Error('O bucket de avatares ainda não foi configurado no Supabase.')
+    throw error
+  }
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  return `${data.publicUrl}?v=${Date.now()}`
+}
+
 export async function getProfileMemories(profileId: string) {
   const memories = await listMemories()
   return memories.filter((memory) => memory.authorId === profileId)

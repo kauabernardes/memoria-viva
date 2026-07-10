@@ -26,20 +26,35 @@ npm run preview
 
 1. Crie ou abra um projeto Supabase.
 2. Para um projeto novo, execute [`supabase/schema.sql`](supabase/schema.sql) no SQL Editor. O arquivo corresponde ao schema adotado pelo projeto e habilita RLS.
-3. Em **Authentication > URL Configuration**, configure a URL do site e as URLs de redirecionamento do ambiente publicado.
-4. Copie `.env.example` para `.env.local` e informe apenas:
+3. Execute também [`supabase/avatar-storage.sql`](supabase/avatar-storage.sql) para criar o bucket público `avatars` e as políticas de upload por usuário.
+4. Em **Authentication > URL Configuration**, configure a URL do site e as URLs de redirecionamento do ambiente publicado.
+5. Copie `.env.example` para `.env.local` e informe apenas:
 
 ```env
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua-chave-anon
+VITE_SITE_URL=https://seu-projeto.vercel.app
 ```
 
 Nunca use `service_role` no frontend. Após mudar variáveis de ambiente, reinicie o Vite. O cadastro envia `username` e `description` como metadados; o trigger cria o perfil associado. Login, logout e sessão persistida usam Supabase Auth quando essas variáveis existem.
+
+### URLs de autenticação em produção
+
+No painel do Supabase, abra **Authentication > URL Configuration** e configure:
+
+- **Site URL:** `https://seu-projeto.vercel.app`
+- **Redirect URLs:** `https://seu-projeto.vercel.app/**`
+- Para desenvolvimento, mantenha também `http://localhost:5173/**`.
+
+No projeto da Vercel, adicione `VITE_SITE_URL=https://seu-projeto.vercel.app` às variáveis do ambiente **Production** e faça um novo deploy. Os fluxos de cadastro e recuperação também usam o domínio atual como fallback, evitando localhost em previews.
+
+Se os templates de e-mail foram personalizados e usam `{{ .SiteURL }}`, troque pelo redirect fornecido pelo fluxo (`{{ .RedirectTo }}`) ou restaure o template padrão do Supabase.
 
 ## Rotas
 
 - `/` — abertura institucional
 - `/login` e `/cadastro` — autenticação
+- `/esqueci-senha` e `/redefinir-senha` — recuperação segura de acesso
 - `/mapa` — filtros, OpenStreetMap, marcadores e lugares próximos
 - `/registros` — pesquisa, destaque, criadores e arquivo de histórias
 - `/historias/:id` — detalhe, narração visual e favorito
@@ -77,6 +92,7 @@ A integração `window.AppInventor?.setWebViewString(...)` é opcional e protegi
 - Interface responsiva escura, otimizada para 360×800 e toque.
 - Navegação SPA com rotas carregadas sob demanda e fallback de rota.
 - Login, cadastro, logout e persistência de sessão.
+- Recuperação de senha com redirect explícito para o domínio publicado.
 - Modo demonstração automático, com sessão, favoritos e novos registros no `localStorage`.
 - Mapa React Leaflet/OpenStreetMap, filtros, busca, marcadores por categoria e detalhe clicável.
 - Localização real em tempo contínuo no mapa, com ponto azul, precisão, recentralização e distâncias calculadas no dispositivo.
@@ -85,6 +101,7 @@ A integração `window.AppInventor?.setWebViewString(...)` é opcional e protegi
 - Detalhe com mapa da localização, comunidade e acesso ao perfil da autoria.
 - Novo registro com validação, URL ou upload de imagem e seleção da localização diretamente no mapa.
 - Perfis próprios e públicos, edição de nome/descrição/foto, estatísticas e lista de criações.
+- Upload de foto de perfil no Supabase Storage, com pré-visualização, limite de 2 MB e formatos JPEG/PNG/WebP.
 - Página de favoritos integrada ao Supabase e ao modo demonstração.
 - Estados de carregamento, erro, vazio, imagem quebrada e ErrorBoundary.
 - Labels, foco visível, texto alternativo e navegação por teclado.

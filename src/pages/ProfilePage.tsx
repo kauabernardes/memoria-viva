@@ -1,12 +1,12 @@
 import { Camera, CirclePlus, MapPin, Pencil, Save, UserRound, X } from 'lucide-react'
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ImageWithFallback } from '../components/ImageWithFallback'
 import { LoadingState } from '../components/LoadingState'
 import { MemoryCard } from '../components/MemoryCard'
 import { PageHeader } from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
-import { getProfileById, getProfileMemories, updateProfile } from '../services/profileService'
+import { getProfileById, getProfileMemories, updateProfile, uploadProfileAvatar } from '../services/profileService'
 import type { Memory, Profile } from '../types'
 
 export function ProfilePage({ own = false }: { own?: boolean }) {
@@ -20,6 +20,8 @@ export function ProfilePage({ own = false }: { own?: boolean }) {
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ username: '', description: '', avatarUrl: '' })
   const [saving, setSaving] = useState(false)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState('')
 
   useEffect(() => {
     if (authLoading) return
@@ -43,12 +45,29 @@ export function ProfilePage({ own = false }: { own?: boolean }) {
     setSaving(true)
     setError('')
     try {
-      const result = await updateProfile(profileId, form)
+      const avatarUrl = avatarFile ? await uploadProfileAvatar(profileId, avatarFile) : form.avatarUrl
+      const result = await updateProfile(profileId, { ...form, avatarUrl })
       setProfile(result)
+      setForm((current) => ({ ...current, avatarUrl }))
+      setAvatarFile(null)
+      setAvatarPreview('')
       setEditing(false)
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível atualizar o perfil.')
     } finally { setSaving(false) }
+  }
+
+  function handleAvatarSelection(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setError('')
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return setError('Escolha uma imagem JPEG, PNG ou WebP.')
+    if (file.size > 2 * 1024 * 1024) return setError('A foto de perfil deve ter no máximo 2 MB.')
+    setAvatarFile(file)
+    const reader = new FileReader()
+    reader.onload = () => setAvatarPreview(String(reader.result))
+    reader.onerror = () => setError('Não foi possível visualizar a imagem.')
+    reader.readAsDataURL(file)
   }
 
   if (!profileId && own) return <main className="app-page"><PageHeader back title="Perfil" /><div className="empty-state"><h1>Entre para ver seu perfil</h1><Link to="/login">Ir para o login</Link></div></main>
@@ -73,7 +92,11 @@ export function ProfilePage({ own = false }: { own?: boolean }) {
           <div className="section-title-row"><h2>Edite seu perfil</h2><Camera size={19} /></div>
           <label htmlFor="profile-name">Nome de usuário</label><input id="profile-name" value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} />
           <label htmlFor="profile-description">Descrição</label><textarea id="profile-description" rows={4} value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} />
-          <label htmlFor="profile-avatar">URL da foto <span>(opcional)</span></label><input id="profile-avatar" type="url" value={form.avatarUrl} onChange={(event) => setForm((current) => ({ ...current, avatarUrl: event.target.value }))} placeholder="https://…" />
+          <span className="profile-photo-label">Foto do perfil</span>
+          <div className="avatar-upload-field">
+            <div className="avatar-upload-preview">{avatarPreview || form.avatarUrl ? <ImageWithFallback src={avatarPreview || form.avatarUrl} alt="Pré-visualização da foto do perfil" /> : <UserRound size={34} />}</div>
+            <div><label className="upload-button" htmlFor="profile-avatar-upload"><Camera size={18} /> {avatarFile ? 'Trocar imagem' : 'Escolher imagem'}<input id="profile-avatar-upload" className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarSelection} /></label><small>JPEG, PNG ou WebP · máximo 2 MB</small></div>
+          </div>
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="primary-button" disabled={saving} type="submit"><Save size={18} /> {saving ? 'Salvando…' : 'Salvar alterações'}</button>
         </form>
